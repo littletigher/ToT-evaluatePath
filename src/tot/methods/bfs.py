@@ -2,12 +2,18 @@ import itertools
 import numpy as np
 from functools import partial
 from tot.models import gpt
+# from tot.models import huggingfaceModel
+from tot.huggingfaceModel import HuggingFaceModel
 
+huggingfaceModel = HuggingFaceModel(model_path="D:\Github\mcp\\tree-of-thought-llm\model\Qwen3-4B", device="cuda", torch_dtype="auto")
 def get_value(task, x, y, n_evaluate_sample, cache_value=True):
     value_prompt = task.value_prompt_wrap(x, y)
     if cache_value and value_prompt in task.value_cache:
         return task.value_cache[value_prompt]
-    value_outputs = gpt(value_prompt, n=n_evaluate_sample, stop=None)
+    value_outputs = huggingfaceModel(value_prompt)
+    # 如果value_outputs不是链表
+    if not isinstance(value_outputs, list):
+        value_outputs=[value_outputs]
     value = task.value_outputs_unwrap(x, y, value_outputs)
     if cache_value:
         task.value_cache[value_prompt] = value
@@ -33,7 +39,7 @@ def get_votes(task, x, ys, n_evaluate_sample):
 
 def get_proposals(task, x, y): 
     propose_prompt = task.propose_prompt_wrap(x, y)
-    proposals = gpt(propose_prompt, n=1, stop=None)[0].split('\n')
+    proposals = huggingfaceModel(propose_prompt).split('\n')
     return [y + _ + '\n' for _ in proposals]
 
 def get_samples(task, x, y, n_generate_sample, prompt_sample, stop):
@@ -43,13 +49,15 @@ def get_samples(task, x, y, n_generate_sample, prompt_sample, stop):
         prompt = task.cot_prompt_wrap(x, y)
     else:
         raise ValueError(f'prompt_sample {prompt_sample} not recognized')
-    samples = gpt(prompt, n=n_generate_sample, stop=stop)
+    samples = huggingfaceModel(prompt)
+    if not isinstance(samples, list):
+        samples = [samples]
     return [y + _ for _ in samples]
 
 def solve(args, task, idx, to_print=True):
-    global gpt
-    gpt = partial(gpt, model=args.backend, temperature=args.temperature)
-    print(gpt)
+    # global gpt
+    # gpt = partial(gpt, model=args.backend, temperature=args.temperature)
+    # print(gpt)
     x = task.get_input(idx)  # input
     ys = ['']  # current output candidates
     infos = []
@@ -88,9 +96,13 @@ def solve(args, task, idx, to_print=True):
     return ys, {'steps': infos}
 
 def naive_solve(args, task, idx, to_print=True):
-    global gpt
-    gpt = partial(gpt, model=args.backend, temperature=args.temperature)
-    print(gpt)
+    # global huggingfaceModel
+    # hfModel = partial(huggingfaceModel, model=args.backend, temperature=args.temperature)
+    # print(hfModel)
     x = task.get_input(idx)  # input
+    print("input:"+x)
     ys = get_samples(task, x, '', args.n_generate_sample, args.prompt_sample, stop=None)
+    # 如果ys不是list 返回[]
+    # if not isinstance(ys, list):
+    #     ys = [ys]
     return ys, {}

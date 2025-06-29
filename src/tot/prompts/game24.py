@@ -10,7 +10,13 @@ Input: 1 4 8 8
 Answer: (8 / 4 + 1) * 8 = 24
 Input: 5 5 5 9
 Answer: 5 + 5 + 5 + 9 = 24
+If you can find a valid expression, answer strictly in the format:
+Answer: (expression) = 24
+If not possible, answer:
+cant fix
 Input: {input}
+
+
 '''
 
 # 5-shot
@@ -45,12 +51,18 @@ Steps:
 10 + 5 = 15 (left: 9 15)
 15 + 9 = 24 (left: 24)
 Answer: ((5 + 5) + 5) + 9 = 24
+If you can find a valid expression, answer strictly in the format:
+Answer: (expression) = 24
+If not possible, answer:
+cant fix
 Input: {input}
 '''
 
 # 1-shot
-propose_prompt = '''Input: 2 8 8 14
-Possible next steps:
+propose_prompt = '''Your output should only include the content of Possible next steps, separated by newline characters.
+For example:
+Input: 2 8 8 14
+Output:
 2 + 8 = 10 (left: 8 10 14)
 8 / 2 = 4 (left: 4 8 14)
 14 + 2 = 16 (left: 8 8 16)
@@ -60,10 +72,12 @@ Possible next steps:
 14 /  2 = 7 (left: 7 8 8)
 14 - 2 = 12 (left: 8 8 12)
 Input: {input}
-Possible next steps:
+Output: 
 '''
 
-value_prompt = '''Evaluate if given numbers can reach 24 (sure/likely/impossible)
+value_prompt = '''
+###Evaluate if the given numbers can reach 24. You do not need to perform rigorous mathematical verification; just make a reasonable estimation and give your judgment. The answer (sure / likely / impossible.)
+##Example
 10 14
 10 + 14 = 24
 sure
@@ -101,6 +115,7 @@ impossible
 (1 + 3) * 3 = 12
 1 3 3 are all too small
 impossible
+##Input
 {input}
 '''
 

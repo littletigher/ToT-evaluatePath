@@ -5,7 +5,7 @@ import argparse
 from tot.tasks import get_task
 from tot.methods.bfs import solve, naive_solve
 from tot.models import gpt_usage
-
+from tot.huggingfaceModel import get_usage
 def run(args):
     task = get_task(args.task)
     logs, cnt_avg, cnt_any = [], 0, 0
@@ -21,10 +21,11 @@ def run(args):
             ys, info = naive_solve(args, task, i) 
         else:
             ys, info = solve(args, task, i)
-
+        print(ys)
         # log
         infos = [task.test_output(i, y) for y in ys]
-        info.update({'idx': i, 'ys': ys, 'infos': infos, 'usage_so_far': gpt_usage(args.backend)})
+        print(infos)
+        info.update({'idx': i,'input': task.get_input(i) ,'ys': ys, 'infos': infos, 'usage_so_far': gpt_usage(args.backend)})
         logs.append(info)
         with open(file, 'w') as f:
             json.dump(logs, f, indent=4)
@@ -37,12 +38,12 @@ def run(args):
     
     n = args.task_end_index - args.task_start_index
     print(cnt_avg / n, cnt_any / n)
-    print('usage_so_far', gpt_usage(args.backend))
-
+    print('usage_so_far', get_usage(args.backend))
+    logs.append('usage_so_far:'+str(get_usage(args.backend)))
 
 def parse_args():
     args = argparse.ArgumentParser()
-    args.add_argument('--backend', type=str, choices=['gpt-4', 'gpt-3.5-turbo', 'gpt-4o'], default='gpt-4')
+    args.add_argument('--backend', type=str, choices=['gpt-4', 'gpt-3.5-turbo', 'gpt-4o','qwen3-4B'], default='qwen3-4B')
     args.add_argument('--temperature', type=float, default=0.7)
 
     args.add_argument('--task', type=str, required=True, choices=['game24', 'text', 'crosswords'])
